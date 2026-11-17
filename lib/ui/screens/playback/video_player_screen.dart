@@ -84,6 +84,7 @@ import '../../../util/device_hinge.dart';
 import '../../../util/focus/back_key_release.dart';
 import '../../../util/focus/dpad_keys.dart';
 import '../../../util/focus/gamepad/gamepad_key_synthesizer.dart';
+import '../../../util/feature_flags.dart';
 import '../../../util/platform_detection.dart';
 import '../../../util/playback_time_label.dart';
 import '../../../util/server_url.dart';
@@ -2922,7 +2923,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       _castService.activeKind == null &&
       _bringupState.phase == PlaybackBringupPhase.ready;
 
-  Future<void> _minimizePlayer() async {
+  bool get _canPopOut => _canMinimize && VideoMiniPlayerController.canPopOut;
+
+  /// Web has no bar to minimize into; the browser floats the video itself.
+  bool get _canWebPictureInPicture =>
+      FeatureFlags.popOutPlayer &&
+      PlatformDetection.isWeb &&
+      _manager.backend is HtmlVideoBackend &&
+      (_manager.backend as HtmlVideoBackend).supportsPictureInPicture;
+
+  Future<void> _toggleWebPictureInPicture() async {
+    final backend = _manager.backend;
+    if (backend is! HtmlVideoBackend) return;
+    await backend.togglePictureInPicture();
+  }
+
+  /// [_minimizePlayer], then the window becomes the pop-out player.
+  Future<void> _popOutPlayer() => _minimizePlayer(popOut: true);
+
+  Future<void> _minimizePlayer({bool popOut = false}) async {
     if (_isStopping || !_canMinimize) return;
     setState(() {
       _isStopping = true;
@@ -2954,6 +2973,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _popPlayerRoute();
+      if (popOut) unawaited(VideoMiniPlayerController.instance.popOut());
     });
   }
 
@@ -5001,6 +5021,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   Icons.picture_in_picture_alt_rounded,
                   color: Colors.white,
                   size: 30 * _osdButtonScale,
+                ),
+              ),
+            if (_canPopOut || _canWebPictureInPicture)
+              IconButton(
+                onPressed: _canPopOut
+                    ? _popOutPlayer
+                    : _toggleWebPictureInPicture,
+                tooltip: l10n.playerTooltipPopOut,
+                icon: AdaptiveIcon(
+                  Icons.open_in_new_rounded,
+                  color: Colors.white,
+                  size: 28 * _osdButtonScale,
                 ),
               ),
             if (PlatformDetection.useMobileUi &&

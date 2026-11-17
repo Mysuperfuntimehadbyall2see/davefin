@@ -158,6 +158,12 @@ class HtmlVideoBackend extends PlayerBackend {
   @override
   bool get demuxesEmbeddedSubtitles => false;
 
+  bool get supportsPictureInPicture => false;
+
+  bool get isInPictureInPicture => false;
+
+  Future<bool> togglePictureInPicture() async => false;
+
   Widget buildView({BoxFit fit = BoxFit.contain}) {
     return const SizedBox.shrink();
   }

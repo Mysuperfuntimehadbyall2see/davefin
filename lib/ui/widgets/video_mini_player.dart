@@ -9,6 +9,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:moonfin_design/moonfin_design.dart';
 import 'package:playback_core/playback_core.dart';
 import 'package:server_core/server_core.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../data/models/aggregated_item.dart';
 import '../../data/models/trickplay_info.dart';
@@ -24,6 +25,7 @@ import '../../playback/media_kit_player_backend.dart';
 import '../../preference/preference_constants.dart';
 import '../../preference/user_preferences.dart';
 import '../../util/auto_hdr_switcher.dart';
+import '../../util/feature_flags.dart';
 import '../../util/platform_detection.dart';
 import '../../util/playback_time_label.dart';
 import '../../syncplay/syncplay_manager.dart';
@@ -34,6 +36,8 @@ import 'adaptive/sf_symbol.dart';
 import '../screensaver/screensaver_controller.dart';
 import 'aether_video_view.dart';
 import 'player_volume_control.dart';
+import 'pop_out_player/pop_out_player_controls.dart';
+import 'pop_out_player/pop_out_window.dart';
 import 'playback/seek_icons.dart';
 import 'playback/track_picker.dart';
 import 'playback/trickplay.dart';
@@ -113,6 +117,29 @@ class VideoMiniPlayerController {
     _sync();
   }
 
+  /// Whether the video can leave for the pop-out window instead of the bar.
+  static bool get canPopOut =>
+      isSupported && FeatureFlags.popOutPlayer && PopOutWindow.isSupported;
+
+  bool get isPoppedOut => PopOutWindow.instance.active.value;
+
+  /// Turns the window into the pop-out player for the minimized video. The
+  /// player screen minimizes first and calls this once it has put the window
+  /// back the way it found it, so the pop-out returns to that window.
+  Future<void> popOut() async {
+    if (_minimized && canPopOut) await PopOutWindow.instance.enter();
+  }
+
+  /// From the pop-out back to the bar along the bottom of the app.
+  Future<void> dock() => PopOutWindow.instance.exit();
+
+  /// From the pop-out or the bar back to the full player. The window grows
+  /// back first, so the player screen finds the window it would have.
+  Future<void> openPlayer() async {
+    await PopOutWindow.instance.exit();
+    await appRouter.push(Destinations.videoPlayer);
+  }
+
   void playerScreenOpened(Object screen) {
     _minimized = false;
     if (_holdsSession) {
@@ -164,6 +191,10 @@ class VideoMiniPlayerController {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       visible.value =
           _minimized && !PlayerRouteObserver.instance.isPlayerActive.value;
+      // With no video left to show, the pop-out grows back into the app.
+      if (!visible.value && isPoppedOut) {
+        unawaited(PopOutWindow.instance.exit());
+      }
       // Nobody took the session back (the video stopped, or another kind of
       // player opened), so hand back what the player screen would have.
       if (!_minimized && _holdsSession) _end();
@@ -188,16 +219,46 @@ class VideoMiniPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!VideoMiniPlayerController.isSupported) return const SizedBox.shrink();
-    return ValueListenableBuilder<bool>(
-      valueListenable: VideoMiniPlayerController.instance.visible,
-      builder: (context, visible, _) =>
-          visible ? const _VideoMiniPlayerBar() : const SizedBox.shrink(),
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        VideoMiniPlayerController.instance.visible,
+        PopOutWindow.instance.active,
+      ]),
+      builder: (context, _) =>
+          VideoMiniPlayerController.instance.visible.value &&
+              !PopOutWindow.instance.active.value
+          ? const _VideoMiniPlayerBar()
+          : const SizedBox.shrink(),
+    );
+  }
+}
+
+/// The whole window while it is the pop-out player. The app sits offstage
+/// under it, so nothing it was showing is lost on the way back.
+class VideoPopOutPlayer extends StatelessWidget {
+  const VideoPopOutPlayer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!VideoMiniPlayerController.canPopOut) return const SizedBox.shrink();
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        VideoMiniPlayerController.instance.visible,
+        PopOutWindow.instance.active,
+      ]),
+      builder: (context, _) =>
+          VideoMiniPlayerController.instance.visible.value &&
+              PopOutWindow.instance.active.value
+          ? const _VideoMiniPlayerBar(popOut: true)
+          : const SizedBox.shrink(),
     );
   }
 }
 
 class _VideoMiniPlayerBar extends StatefulWidget {
-  const _VideoMiniPlayerBar();
+  final bool popOut;
+
+  const _VideoMiniPlayerBar({this.popOut = false});
 
   @override
   State<_VideoMiniPlayerBar> createState() => _VideoMiniPlayerBarState();
@@ -348,6 +409,7 @@ class _VideoMiniPlayerBarState extends State<_VideoMiniPlayerBar> {
   /// plus room for the skip label when it shows.
   double _rightSideWidth(double scale) {
     var buttons = 3; // audio, volume or mute, and open player
+    if (VideoMiniPlayerController.canPopOut) buttons++;
     if (_streamCount('Subtitle') > 0 || _canDownloadSubtitles) buttons++;
     if (GetIt.instance.isRegistered<SyncPlayManager>() &&
         GetIt.instance<SyncPlayManager>().state.enabled) {
@@ -512,7 +574,10 @@ class _VideoMiniPlayerBarState extends State<_VideoMiniPlayerBar> {
     super.dispose();
   }
 
-  void _openPlayer() => unawaited(appRouter.push(Destinations.videoPlayer));
+  void _openPlayer() =>
+      unawaited(VideoMiniPlayerController.instance.openPlayer());
+
+  void _popOut() => unawaited(VideoMiniPlayerController.instance.popOut());
 
   /// Stops this client only. In a SyncPlay group a user stop would end
   /// playback for everyone, while leaving the full player only stops here, so
@@ -625,6 +690,7 @@ class _VideoMiniPlayerBarState extends State<_VideoMiniPlayerBar> {
     }
     final l10n = AppLocalizations.of(context);
     final info = _describe(item);
+    if (widget.popOut) return _buildPopOut(l10n, info);
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
 
     // The bar is outside the navigator, so a picker's barrier doesn't cover
@@ -803,6 +869,14 @@ class _VideoMiniPlayerBarState extends State<_VideoMiniPlayerBar> {
                         extent: 44 * scale,
                         onPressed: _toggleMute,
                       ),
+                    if (VideoMiniPlayerController.canPopOut)
+                      _TransportButton(
+                        icon: Icons.open_in_new_rounded,
+                        tooltip: l10n.playerTooltipPopOut,
+                        size: 22 * scale,
+                        extent: 44 * scale,
+                        onPressed: _popOut,
+                      ),
                     _TransportButton(
                       icon: Icons.open_in_full_rounded,
                       tooltip: l10n.miniPlayerOpenPlayer,
@@ -818,6 +892,41 @@ class _VideoMiniPlayerBarState extends State<_VideoMiniPlayerBar> {
         ),
       ),
     );
+  }
+
+  Widget _buildPopOut(AppLocalizations l10n, _ItemInfo info) {
+    final controls = PopOutPlayerControls(
+      video: const _VideoSurface(),
+      progress: _MiniProgressBar(
+        state: _state,
+        onSeek: (position) => unawaited(_manager.seekTo(position)),
+        tileAt: _trickplayTileAt,
+      ),
+      title: info.title,
+      subtitle: info.subtitle,
+      isPlaying: _state.isPlaying,
+      seekBackMs: _prefs.get(UserPreferences.skipBackLength),
+      seekForwardMs: _prefs.get(UserPreferences.skipForwardLength),
+      onTogglePlayPause: () => unawaited(_togglePlayPause()),
+      onSeekRelative: _seekRelative,
+      onReturnToPlayer: _openPlayer,
+      onDock: () => unawaited(VideoMiniPlayerController.instance.dock()),
+      onStop: () => unawaited(_stop()),
+      onStartDrag: () => unawaited(windowManager.startDragging()),
+      skipSegment: switch (_askSegment) {
+        final segment? => _SkipSegmentButton(
+          label: l10n.skipSegment(segment.type.displayName),
+          onPressed: _skipAskedSegment,
+        ),
+        null => null,
+      },
+    );
+    // No fill of its own: on Windows the HDR picture shows through a hole
+    // in the window, and the surface paints black everywhere else. Without a
+    // title bar, a Linux window has no frame to resize it by.
+    return PlatformDetection.isLinux
+        ? DragToResizeArea(child: controls)
+        : controls;
   }
 
   Widget _buildCompact(AppLocalizations l10n, _ItemInfo info) {
@@ -883,15 +992,7 @@ class _VideoThumbnail extends StatelessWidget {
           child: SizedBox(
             height: height,
             width: height * 16 / 9,
-            child: !PlatformDetection.isMacOS
-                ? const _MpvVideoSurface()
-                : const ColoredBox(
-                    color: Colors.black,
-                    // The engine draws into whichever view attached last, so
-                    // this takes the video over from the player and hands it
-                    // back on restore.
-                    child: AetherVideoView(),
-                  ),
+            child: const _VideoSurface(),
           ),
         ),
       ),
@@ -900,6 +1001,25 @@ class _VideoThumbnail extends StatelessWidget {
 }
 
 const _thumbnailRadius = 6.0;
+
+/// The playing video, at whatever size it is given: the bar's thumbnail or
+/// the whole pop-out window.
+class _VideoSurface extends StatelessWidget {
+  const _VideoSurface();
+
+  @override
+  Widget build(BuildContext context) {
+    return !PlatformDetection.isMacOS
+        ? const _MpvVideoSurface()
+        : const ColoredBox(
+            color: Colors.black,
+            // The engine draws into whichever view attached last, so this
+            // takes the video over from the player and hands it back on
+            // restore.
+            child: AetherVideoView(),
+          );
+  }
+}
 
 /// mpv's picture on Windows and Linux, in whichever of its two outputs it is
 /// on. Linux only has the texture.

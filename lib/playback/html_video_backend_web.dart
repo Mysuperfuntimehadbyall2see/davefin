@@ -1708,6 +1708,29 @@ class HtmlVideoBackend extends PlayerBackend
   @override
   bool get demuxesEmbeddedSubtitles => false;
 
+  /// Whether the browser can float this video in its own picture-in-picture
+  /// window. Firefox has its own PiP button but no API for it.
+  bool get supportsPictureInPicture =>
+      web.document.pictureInPictureEnabled &&
+      !_videoElement.disablePictureInPicture;
+
+  bool get isInPictureInPicture =>
+      web.document.pictureInPictureElement == _videoElement;
+
+  /// Floats the video out of the page, or brings it back. The browser's
+  /// window has its own play, pause and back-to-tab controls. Returns whether
+  /// the video is in picture-in-picture afterwards.
+  Future<bool> togglePictureInPicture() async {
+    try {
+      if (isInPictureInPicture) {
+        await web.document.exitPictureInPicture().toDart;
+      } else {
+        await _videoElement.requestPictureInPicture().toDart;
+      }
+    } catch (_) {}
+    return isInPictureInPicture;
+  }
+
   Widget buildView({BoxFit fit = BoxFit.contain}) {
     _videoElement.style.objectFit = _cssObjectFit(fit);
     return HtmlElementView(viewType: _viewType);

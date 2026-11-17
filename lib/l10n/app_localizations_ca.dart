@@ -11825,6 +11825,15 @@ class AppLocalizationsCa extends AppLocalizations {
   String get miniPlayerOpenPlayer => 'Obre el reproductor';
 
   @override
+  String get playerTooltipPopOut => 'Pop out player';
+
+  @override
+  String get popOutPlayerReturn => 'Return to full player';
+
+  @override
+  String get popOutPlayerDock => 'Dock in app window';
+
+  @override
   String get contextMenuMarkWatched => 'Marca com a vist';
 
   @override

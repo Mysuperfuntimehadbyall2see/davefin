@@ -11610,6 +11610,15 @@ class AppLocalizationsEo extends AppLocalizations {
   String get miniPlayerOpenPlayer => 'Open player';
 
   @override
+  String get playerTooltipPopOut => 'Pop out player';
+
+  @override
+  String get popOutPlayerReturn => 'Return to full player';
+
+  @override
+  String get popOutPlayerDock => 'Dock in app window';
+
+  @override
   String get contextMenuMarkWatched => 'Marki kiel Rigardita';
 
   @override

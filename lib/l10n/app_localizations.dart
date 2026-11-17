@@ -20482,6 +20482,24 @@ abstract class AppLocalizations {
   /// **'Open player'**
   String get miniPlayerOpenPlayer;
 
+  /// Tooltip label for moving the playing video into a small always-on-top window (or the browser's picture-in-picture on web)
+  ///
+  /// In en, this message translates to:
+  /// **'Pop out player'**
+  String get playerTooltipPopOut;
+
+  /// Tooltip label in the pop-out player window for going back to the full video player
+  ///
+  /// In en, this message translates to:
+  /// **'Return to full player'**
+  String get popOutPlayerReturn;
+
+  /// Tooltip label in the pop-out player window for growing the window back into the app with the video in the mini player bar along the bottom
+  ///
+  /// In en, this message translates to:
+  /// **'Dock in app window'**
+  String get popOutPlayerDock;
+
   /// Context menu action to mark an item as watched
   ///
   /// In en, this message translates to:

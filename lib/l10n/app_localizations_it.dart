@@ -11729,6 +11729,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get miniPlayerOpenPlayer => 'Apri lettore';
 
   @override
+  String get playerTooltipPopOut => 'Pop out player';
+
+  @override
+  String get popOutPlayerReturn => 'Return to full player';
+
+  @override
+  String get popOutPlayerDock => 'Dock in app window';
+
+  @override
   String get contextMenuMarkWatched => 'Segna come visto';
 
   @override

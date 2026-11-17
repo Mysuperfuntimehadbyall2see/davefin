@@ -46,6 +46,7 @@ import 'ui/theme/app_theme.dart';
 import 'ui/theme/app_theme_controller.dart';
 import 'ui/widgets/app_update_banner.dart';
 import 'ui/widgets/cast_mini_player.dart';
+import 'ui/widgets/pop_out_player/pop_out_window.dart';
 import 'ui/widgets/video_mini_player.dart';
 import 'ui/screens/settings/achievements_screen.dart';
 import 'ui/widgets/floating_notification.dart';
@@ -330,7 +331,21 @@ class _MoonfinAppState extends State<MoonfinApp> {
                                     : const SizedBox.shrink(),
                               ),
                             ),
-                            TimesUpFocusGuard(child: shell),
+                            // Offstage, not removed, while the window is the
+                            // pop-out player, so the screen underneath keeps
+                            // its state for the way back.
+                            ValueListenableBuilder<bool>(
+                              valueListenable: PopOutWindow.instance.active,
+                              builder: (context, poppedOut, child) => Offstage(
+                                offstage: poppedOut,
+                                child: ExcludeFocus(
+                                  excluding: poppedOut,
+                                  child: child!,
+                                ),
+                              ),
+                              child: TimesUpFocusGuard(child: shell),
+                            ),
+                            const VideoPopOutPlayer(),
                             if (PlatformDetection.isTV) const ScreensaverHost(),
                             // Last, so nothing sits above it and nothing can be
                             // reached through it while the schedule is closed.
@@ -1001,6 +1016,9 @@ class _GlobalShortcutScopeState extends State<_GlobalShortcutScope>
   Future<void> _saveWindowGeometry() async {
     try {
       final prefs = GetIt.instance<UserPreferences>();
+      // The pop-out's own small window is never what the app should reopen
+      // at; the bounds it goes back to were saved before it popped out.
+      if (PopOutWindow.instance.active.value) return;
       final isFullScreen = await windowManager.isFullScreen();
       await prefs.set(UserPreferences.windowFullscreen, isFullScreen);
       await prefs.set(UserPreferences.windowMaximized, _isMaximized);

@@ -62,6 +62,7 @@ import 'util/device_performance.dart';
 import 'ui/navigation/app_router.dart';
 import 'ui/screensaver/screensaver_controller.dart';
 import 'ui/widgets/reader/epub_js_view.dart';
+import 'ui/widgets/pop_out_player/pop_out_window.dart';
 import 'util/device_hinge.dart';
 import 'util/platform_detection.dart';
 import 'util/process_exit_reporter.dart';
@@ -233,16 +234,15 @@ Future<void> _restoreWindowGeometry() async {
   final startMaximized =
       prefs.get(UserPreferences.windowMaximized) && !startFullscreen;
 
-  const minW = 800.0;
-  const minH = 500.0;
-  final hasSavedGeometry = w >= minW && h >= minH;
+  final hasSavedGeometry =
+      w >= appMinimumWindowSize.width && h >= appMinimumWindowSize.height;
   final bounds = hasSavedGeometry
       ? fitBoundsToWorkAreas(Rect.fromLTWH(x, y, w, h), await _workAreas())
       : null;
 
   final options = WindowOptions(
     size: bounds?.size ?? const Size(1280, 720),
-    minimumSize: const Size(minW, minH),
+    minimumSize: appMinimumWindowSize,
     center: !hasSavedGeometry && !startMaximized,
     skipTaskbar: false,
   );

@@ -11291,6 +11291,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get miniPlayerOpenPlayer => '플레이어 열기';
 
   @override
+  String get playerTooltipPopOut => 'Pop out player';
+
+  @override
+  String get popOutPlayerReturn => 'Return to full player';
+
+  @override
+  String get popOutPlayerDock => 'Dock in app window';
+
+  @override
   String get contextMenuMarkWatched => '시청한 것으로 표시';
 
   @override
