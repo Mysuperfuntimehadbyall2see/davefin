@@ -60,11 +60,29 @@ jobs:
             test/data/services/app_update_service_store_test.dart \
             test/ui/widgets/app_update_banner_test.dart
 
-      # The rest of upstream's suite. A few of its tests fail on a plain
-      # Linux runner on upstream's own 3.1.0 tag too, so this reports
-      # without gating; the step above gates Davefin's code.
+  # The rest of upstream's suite. A few of its tests fail on a plain Linux
+  # runner on upstream's own 3.1.0 tag too, so this reports without gating;
+  # the check job gates Davefin's code. It is slow, so it runs on its own
+  # and the builds don't wait for it.
+  upstream-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get packages
+        run: |
+          flutter pub get
+          for pkg in packages/*/; do
+            [ -f "$pkg/pubspec.yaml" ] && (cd "$pkg" && flutter pub get >/dev/null)
+          done
+
       - name: Full test suite
-        continue-on-error: true
         run: flutter test --no-pub test/
 
   android:
