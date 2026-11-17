@@ -2,8 +2,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_NAME="Moonfin"
-APP_ID="org.moonfin.linux"
+APP_NAME="Davefin"
+APP_ID="org.davefin.linux"
 APP_ICON="$REPO_ROOT/assets/icons/moonfin.png"
 BUILD_DIR="$REPO_ROOT/build/linux/release/bundle"
 TEMP_DIR="$REPO_ROOT/build/linux/temp"
@@ -127,7 +127,7 @@ resolve_build_dir() {
 
   local candidate
   for candidate in "${candidates[@]}"; do
-    if [ -d "$candidate" ] && [ -f "$candidate/moonfin" ]; then
+    if [ -d "$candidate" ] && [ -f "$candidate/davefin" ]; then
       printf '%s\n' "$candidate"
       return 0
     fi
@@ -555,14 +555,14 @@ create_desktop_file() {
   cat > "$dest/${APP_ID}.desktop" << EOF
 [Desktop Entry]
 Type=Application
-Name=Moonfin
-Exec=moonfin %U
+Name=Davefin
+Exec=davefin %U
 Icon=${APP_ID}
 Categories=AudioVideo;Video;
 Comment=Jellyfin & Emby media client
 Terminal=false
 StartupWMClass=${APP_ID}
-MimeType=x-scheme-handler/moonfin;
+MimeType=x-scheme-handler/davefin;
 EOF
   # AppImage launchers read the version from the embedded desktop entry rather
   # than the filename.
@@ -582,13 +582,13 @@ create_metainfo_file() {
   <id>${APP_ID}</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
-  <name>Moonfin</name>
-  <developer_name>Moonfin Team</developer_name>
+  <name>Davefin</name>
+  <developer_name>Davefin Team</developer_name>
   <summary>Jellyfin &amp; Emby media client</summary>
   <description>
-    <p>Moonfin is a media client for Jellyfin and Emby servers, available on mobile, TV, and desktop platforms.</p>
+    <p>Davefin is a media client for Jellyfin and Emby servers, available on mobile, TV, and desktop platforms.</p>
   </description>
-  <url type="homepage">https://moonfin.app/</url>
+  <url type="homepage">https://github.com/Mysuperfuntimehadbyall2see/davefin</url>
   <launchable type="desktop-id">${APP_ID}.desktop</launchable>
   <releases>
     <release version="${version}" date="$(date '+%Y-%m-%d')"/>
@@ -705,7 +705,7 @@ resolve_exact_lib() {
   return 1
 }
 
-ldd_output="$(LD_LIBRARY_PATH="$check_lib_path" ldd "$APPDIR/moonfin" 2>/dev/null || true)"
+ldd_output="$(LD_LIBRARY_PATH="$check_lib_path" ldd "$APPDIR/davefin" 2>/dev/null || true)"
 
 # Only "libfoo.so => not found" lines name a missing library. Symbol version
 # lines start with the binary path, so matching bare "not found" reports the
@@ -718,14 +718,14 @@ if ! resolve_exact_lib libsqlite3.so; then
 fi
 
 if [ -n "$missing_libs" ]; then
-  echo "Moonfin cannot start. Missing shared libraries:" >&2
+  echo "Davefin cannot start. Missing shared libraries:" >&2
   printf '  - %s\n' $missing_libs >&2
   echo "Install the missing libraries for your distro and retry." >&2
   exit 127
 fi
 
 if [ -n "$version_errors" ]; then
-  echo "Moonfin cannot start. A library your system provides is missing symbols" >&2
+  echo "Davefin cannot start. A library your system provides is missing symbols" >&2
   echo "this build needs:" >&2
   printf '%s\n' "$version_errors" >&2
   echo "That library has to be bundled with the app for your distro." >&2
@@ -734,7 +734,7 @@ if [ -n "$version_errors" ]; then
   exit 127
 fi
 
-exec "$APPDIR/moonfin" "$@"
+exec "$APPDIR/davefin" "$@"
 EOF
   chmod +x "$appimage_dir/AppRun"
 
@@ -753,7 +753,7 @@ EOF
   # Update information lets AppImage updaters fetch only the changed blocks from
   # the .zsync published with each release. The wildcard matches whichever
   # version the current release carries.
-  local update_info="${APPIMAGE_UPDATE_INFO:-gh-releases-zsync|Moonfin-Client|Moonfin-Core|latest|${APP_NAME}_${PLATFORM_TAG}_v*.AppImage.zsync}"
+  local update_info="${APPIMAGE_UPDATE_INFO:-gh-releases-zsync|Mysuperfuntimehadbyall2see|davefin|latest|${APP_NAME}_${PLATFORM_TAG}_v*.AppImage.zsync}"
   local appimagetool_args=()
   if command -v zsyncmake >/dev/null 2>&1; then
     appimagetool_args+=( -u "$update_info" )
@@ -785,16 +785,16 @@ build_tarball() {
 
   local version="$(get_app_version)"
   local tarball_name="${APP_NAME}_${PLATFORM_TAG}_v${version}.tar.gz"
-  local tar_dir="$TEMP_DIR/tarball/moonfin-${version}"
+  local tar_dir="$TEMP_DIR/tarball/davefin-${version}"
 
   rm -rf "$TEMP_DIR/tarball"
   mkdir -p "$tar_dir"
   cp -r "$BUILD_DIR"/* "$tar_dir/"
   inject_linux_runtime_libs "$tar_dir"
 
-  if [ -f "$tar_dir/moonfin" ]; then
-    mv "$tar_dir/moonfin" "$tar_dir/moonfin-bin"
-    cat > "$tar_dir/moonfin" << 'EOF'
+  if [ -f "$tar_dir/davefin" ]; then
+    mv "$tar_dir/davefin" "$tar_dir/davefin-bin"
+    cat > "$tar_dir/davefin" << 'EOF'
 #!/bin/sh
 APPDIR="$(cd "$(dirname "$0")" && pwd)"
 export LD_LIBRARY_PATH="$APPDIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
@@ -819,7 +819,7 @@ resolve_exact_lib() {
   return 1
 }
 
-ldd_output="$(LD_LIBRARY_PATH="$check_lib_path" ldd "$APPDIR/moonfin-bin" 2>/dev/null || true)"
+ldd_output="$(LD_LIBRARY_PATH="$check_lib_path" ldd "$APPDIR/davefin-bin" 2>/dev/null || true)"
 
 # Only "libfoo.so => not found" lines name a missing library. Symbol version
 # lines start with the binary path, so matching bare "not found" reports the
@@ -832,14 +832,14 @@ if ! resolve_exact_lib libsqlite3.so; then
 fi
 
 if [ -n "$missing_libs" ]; then
-  echo "Moonfin cannot start. Missing shared libraries:" >&2
+  echo "Davefin cannot start. Missing shared libraries:" >&2
   printf '  - %s\n' $missing_libs >&2
   echo "Install the missing libraries for your distro and retry." >&2
   exit 127
 fi
 
 if [ -n "$version_errors" ]; then
-  echo "Moonfin cannot start. A library your system provides is missing symbols" >&2
+  echo "Davefin cannot start. A library your system provides is missing symbols" >&2
   echo "this build needs:" >&2
   printf '%s\n' "$version_errors" >&2
   echo "That library has to be bundled with the app for your distro." >&2
@@ -848,18 +848,18 @@ if [ -n "$version_errors" ]; then
   exit 127
 fi
 
-exec "$APPDIR/moonfin-bin" "$@"
+exec "$APPDIR/davefin-bin" "$@"
 EOF
-    chmod +x "$tar_dir/moonfin"
+    chmod +x "$tar_dir/davefin"
   fi
 
   cat > "$tar_dir/README.txt" << EOF
-Moonfin ${version}
+Davefin ${version}
 Jellyfin & Emby media client for Linux
 
 Installation:
   1. Extract this archive
-  2. Run ./moonfin
+  2. Run ./davefin
 
 Dependencies:
   - GTK 3.0+
@@ -882,7 +882,7 @@ EOF
   install_icons "$tar_dir/share"
 
   cd "$TEMP_DIR/tarball"
-  tar -czf "$tarball_name" "moonfin-${version}"
+  tar -czf "$tarball_name" "davefin-${version}"
   mv "$tarball_name" "$REPO_ROOT/"
   echo "✓ Created: $REPO_ROOT/$tarball_name"
 }
@@ -914,24 +914,24 @@ build_deb() {
 
   local version="$(get_app_version)"
   local deb_name="${APP_NAME}_${PLATFORM_TAG}_v${version}.deb"
-  local pkg_root="$TEMP_DIR/deb/moonfin-${version}"
+  local pkg_root="$TEMP_DIR/deb/davefin-${version}"
   local deb_arch
   deb_arch="$(get_deb_architecture)"
 
   rm -rf "$TEMP_DIR/deb"
-  mkdir -p "$pkg_root"/{usr/bin,usr/lib/moonfin,usr/share/applications,usr/share/pixmaps,usr/share/doc/moonfin,DEBIAN}
+  mkdir -p "$pkg_root"/{usr/bin,usr/lib/davefin,usr/share/applications,usr/share/pixmaps,usr/share/doc/davefin,DEBIAN}
 
-  cp -r "$BUILD_DIR"/* "$pkg_root/usr/lib/moonfin/"
+  cp -r "$BUILD_DIR"/* "$pkg_root/usr/lib/davefin/"
 
-  inject_linux_runtime_libs "$pkg_root/usr/lib/moonfin"
+  inject_linux_runtime_libs "$pkg_root/usr/lib/davefin"
 
-  cat > "$pkg_root/usr/bin/moonfin" << 'EOF'
+  cat > "$pkg_root/usr/bin/davefin" << 'EOF'
 #!/bin/sh
-APPDIR="/usr/lib/moonfin"
+APPDIR="/usr/lib/davefin"
 export LD_LIBRARY_PATH="$APPDIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$APPDIR/moonfin" "$@"
+exec "$APPDIR/davefin" "$@"
 EOF
-  chmod +x "$pkg_root/usr/bin/moonfin"
+  chmod +x "$pkg_root/usr/bin/davefin"
 
   create_desktop_file "$pkg_root/usr/share/applications"
   install_icons "$pkg_root/usr/share"
@@ -944,21 +944,21 @@ EOF
   # launch into a refused install that names the glibc the machine needs.
   local depends="libgtk-3-0, libglib2.0-0, libsecret-1-0, libwebkit2gtk-4.1-0, xdg-user-dirs"
   local glibc
-  glibc="$(required_glibc_version "$pkg_root/usr/lib/moonfin")"
+  glibc="$(required_glibc_version "$pkg_root/usr/lib/davefin")"
   if [ -n "$glibc" ]; then
     depends="$depends, libc6 (>= $glibc)"
   fi
   echo "Depends: $depends"
 
   cat > "$pkg_root/DEBIAN/control" << EOF
-Package: moonfin
+Package: davefin
 Version: ${version}
 Architecture: ${deb_arch}
-Maintainer: Moonfin Team <support@moonfin.dev>
+Maintainer: Davefin Team <98988712+Mysuperfuntimehadbyall2see@users.noreply.github.com>
 Installed-Size: $(du -sk "$pkg_root/usr" | cut -f1)
 Depends: ${depends}
 Description: Jellyfin & Emby media client
- Moonfin is a media client for Jellyfin and Emby servers,
+ Davefin is a media client for Jellyfin and Emby servers,
  available on mobile, TV, and desktop platforms.
  .
  Features:
@@ -966,23 +966,23 @@ Description: Jellyfin & Emby media client
   - Offline downloads
   - Casting support
   - DLNA playback
-Homepage: https://moonfin.app/
+Homepage: https://github.com/Mysuperfuntimehadbyall2see/davefin
 License: GPL-3.0-only
 EOF
 
-  cat > "$pkg_root/usr/share/doc/moonfin/copyright" << EOF
+  cat > "$pkg_root/usr/share/doc/davefin/copyright" << EOF
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Moonfin
-Upstream-Contact: https://github.com/jmshrv/Moonfin
-Source: https://github.com/jmshrv/Moonfin
+Upstream-Contact: https://github.com/Moonfin-Client/Moonfin-Core
+Source: https://github.com/Moonfin-Client/Moonfin-Core
 
 Files: *
-Copyright: 2024-2025 Moonfin Team
+Copyright: 2024-2026 Moonfin Team (Davefin is a fork of Moonfin)
 License: GPL-3.0-only
 EOF
 
   cd "$TEMP_DIR/deb"
-  dpkg-deb --build "moonfin-${version}" "$deb_name" 2>/dev/null || true
+  dpkg-deb --build "davefin-${version}" "$deb_name" 2>/dev/null || true
 
   if [ -f "$deb_name" ]; then
     mv "$deb_name" "$REPO_ROOT/"
@@ -1000,7 +1000,7 @@ build_rpm() {
   local version="$(get_app_version)"
   local rpm_name="${APP_NAME}_${PLATFORM_TAG}_v${version}.rpm"
   local rpm_dir="$TEMP_DIR/rpm"
-  local spec_file="$rpm_dir/moonfin.spec"
+  local spec_file="$rpm_dir/davefin.spec"
 
   rm -rf "$rpm_dir"
   mkdir -p "$rpm_dir"/{SPECS,SOURCES,BUILD,RPMS,SRPMS}
@@ -1008,7 +1008,7 @@ build_rpm() {
   create_metainfo_file "$rpm_dir" "$version"
 
   cat > "$spec_file" << EOF
-Name:           moonfin
+Name:           davefin
 Version:        ${version}
 Release:        1
 Summary:        Jellyfin & Emby media client
@@ -1016,25 +1016,25 @@ License:        GPL-3.0-only
 Requires:       xdg-user-dirs
 
 %description
-Moonfin is a media client for Jellyfin and Emby servers,
+Davefin is a media client for Jellyfin and Emby servers,
 available on mobile, TV, and desktop platforms.
 
 %install
 mkdir -p %{buildroot}/usr/bin
-mkdir -p %{buildroot}/usr/lib/moonfin
+mkdir -p %{buildroot}/usr/lib/davefin
 mkdir -p %{buildroot}/usr/share/applications
 mkdir -p %{buildroot}/usr/share/pixmaps
 mkdir -p %{buildroot}/usr/share/metainfo
 
-cp -r ${BUILD_DIR}/* %{buildroot}/usr/lib/moonfin/
+cp -r ${BUILD_DIR}/* %{buildroot}/usr/lib/davefin/
 
-cat > %{buildroot}/usr/bin/moonfin << 'EOFRUNNER'
+cat > %{buildroot}/usr/bin/davefin << 'EOFRUNNER'
 #!/bin/sh
-APPDIR="/usr/lib/moonfin"
+APPDIR="/usr/lib/davefin"
 export LD_LIBRARY_PATH="\$APPDIR/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
-exec "\$APPDIR/moonfin" "\$@"
+exec "\$APPDIR/davefin" "\$@"
 EOFRUNNER
-chmod +x %{buildroot}/usr/bin/moonfin
+chmod +x %{buildroot}/usr/bin/davefin
 
 cp "$rpm_dir/${APP_ID}.desktop" %{buildroot}/usr/share/applications/${APP_ID}.desktop
 cp "$rpm_dir/${APP_ID}.metainfo.xml" %{buildroot}/usr/share/metainfo/${APP_ID}.metainfo.xml
@@ -1046,16 +1046,16 @@ if [ -f "$APP_ICON" ]; then
 fi
 
 %files
-/usr/bin/moonfin
-%dir /usr/lib/moonfin
-/usr/lib/moonfin/*
+/usr/bin/davefin
+%dir /usr/lib/davefin
+/usr/lib/davefin/*
 /usr/share/applications/${APP_ID}.desktop
 /usr/share/icons/hicolor/512x512/apps/${APP_ID}.png
 /usr/share/pixmaps/${APP_ID}.png
 /usr/share/metainfo/${APP_ID}.metainfo.xml
 
 %changelog
-* $(date '+%a %b %d %Y') Moonfin Team <support@moonfin.dev>
+* $(date '+%a %b %d %Y') Davefin Team <98988712+Mysuperfuntimehadbyall2see@users.noreply.github.com>
 - Release ${version}
 EOF
 
@@ -1130,12 +1130,12 @@ build_snap() {
   mkdir -p "$snap_dir"
 
   cat > "$snap_dir/snapcraft.yaml" << EOF
-name: moonfin
-title: Moonfin
+name: davefin
+title: Davefin
 version: '${version}'
 summary: Jellyfin & Emby media client
 description: |
-  Moonfin is a media client for Jellyfin and Emby servers.
+  Davefin is a media client for Jellyfin and Emby servers.
   Stream movies, TV shows, music, and photos from your server.
 
 grade: stable
@@ -1144,8 +1144,8 @@ base: ${snap_base}
 icon: ${APP_ID}.png
 
 apps:
-  moonfin:
-    command: moonfin
+  davefin:
+    command: davefin
     plugs:
       - home
       - network
@@ -1159,7 +1159,7 @@ apps:
       LD_LIBRARY_PATH: \$SNAP/lib:\$SNAP/lib/${snap_triplet}:\$SNAP/usr/lib/${snap_triplet}:\$SNAP/usr/lib/${snap_triplet}/pulseaudio
 
 parts:
-  moonfin:
+  davefin:
     plugin: dump
     source: .
     override-build: |
@@ -1181,16 +1181,16 @@ EOF
   # snapcraft installs snap/gui into meta/gui and snapd rewrites the entry on
   # install, which is the only way a strictly confined snap gets an icon.
   mkdir -p "$snap_dir/snap/gui"
-  cat > "$snap_dir/snap/gui/moonfin.desktop" << EOF
+  cat > "$snap_dir/snap/gui/davefin.desktop" << EOF
 [Desktop Entry]
 Type=Application
-Name=Moonfin
-Exec=moonfin %U
+Name=Davefin
+Exec=davefin %U
 Icon=\${SNAP}/meta/gui/icon.png
 Categories=AudioVideo;Video;
 Comment=Jellyfin & Emby media client
 Terminal=false
-MimeType=x-scheme-handler/moonfin;
+MimeType=x-scheme-handler/davefin;
 EOF
 
   cd "$snap_dir"
@@ -1232,7 +1232,7 @@ build_flatpak() {
   rm -rf "$flatpak_build_dir" "$flatpak_repo_dir"
   mkdir -p "$flatpak_src"
   cp -r "$BUILD_DIR"/* "$flatpak_src/"
-  inject_flatpak_libs "$flatpak_src/lib/moonfin"
+  inject_flatpak_libs "$flatpak_src/lib/davefin"
   [ -f "$APP_ICON" ] && cp "$APP_ICON" "$flatpak_src/${APP_ID}.png"
   create_desktop_file "$flatpak_src"
   create_metainfo_file "$flatpak_src" "$version"
@@ -1243,7 +1243,7 @@ runtime: org.gnome.Platform
 runtime-version: '50'
 sdk: org.gnome.Sdk
 
-command: moonfin
+command: davefin
 
 finish-args:
   - --share=network
@@ -1255,7 +1255,7 @@ finish-args:
   - --device=all
   - --socket=pulseaudio
   # MPRIS media controls
-  - --own-name=org.mpris.MediaPlayer2.moonfin
+  - --own-name=org.mpris.MediaPlayer2.davefin
   # Saved logins (flutter_secure_storage via libsecret)
   - --talk-name=org.freedesktop.secrets
   # Keep the screen awake during playback (wakelock_plus)
@@ -1266,7 +1266,7 @@ finish-args:
   - --system-talk-name=org.freedesktop.NetworkManager
   # Earlier builds kept the offline database here. It's read once to copy it
   # into the app's own data folder.
-  - --filesystem=xdg-documents/Moonfin:ro
+  - --filesystem=xdg-documents/Davefin:ro
 
 modules:
   - name: appstream-compose-shim
@@ -1306,16 +1306,16 @@ modules:
               args+=("\$arg")
             done
             exec appstreamcli compose "\${args[@]}"
-  - name: moonfin
+  - name: davefin
     buildsystem: simple
     build-commands:
-      - mkdir -p /app/bin /app/moonfin /app/share/applications /app/share/metainfo /app/share/icons/hicolor/512x512/apps
-      - cp -r . /app/moonfin/
-      - chmod +x /app/moonfin/moonfin
+      - mkdir -p /app/bin /app/davefin /app/share/applications /app/share/metainfo /app/share/icons/hicolor/512x512/apps
+      - cp -r . /app/davefin/
+      - chmod +x /app/davefin/davefin
       - |
-        cat > /app/bin/moonfin << 'EOFRUN'
+        cat > /app/bin/davefin << 'EOFRUN'
         #!/bin/sh
-        export LD_LIBRARY_PATH="/app/moonfin/lib/moonfin:/app/moonfin/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+        export LD_LIBRARY_PATH="/app/davefin/lib/davefin:/app/davefin/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
 
         resolve_exact_lib() {
           lib_name="\$1"
@@ -1333,7 +1333,7 @@ modules:
           return 1
         }
 
-        ldd_output="\$(ldd /app/moonfin/moonfin 2>/dev/null || true)"
+        ldd_output="\$(ldd /app/davefin/davefin 2>/dev/null || true)"
 
         # Only "libfoo.so => not found" lines name a missing library. Symbol
         # version lines start with the binary path, so matching bare "not found"
@@ -1346,14 +1346,14 @@ modules:
         fi
 
         if [ -n "\$missing_libs" ]; then
-          echo "Moonfin cannot start. Missing shared libraries:" >&2
+          echo "Davefin cannot start. Missing shared libraries:" >&2
           printf '  - %s\\n' \$missing_libs >&2
           echo "Install the missing libraries in the runtime and retry." >&2
           exit 127
         fi
 
         if [ -n "\$version_errors" ]; then
-          echo "Moonfin cannot start. A library the Flatpak runtime provides is missing" >&2
+          echo "Davefin cannot start. A library the Flatpak runtime provides is missing" >&2
           echo "symbols this build needs:" >&2
           printf '%s\\n' "\$version_errors" >&2
           echo "The bundled libraries were built against a newer system than the runtime." >&2
@@ -1361,9 +1361,9 @@ modules:
           exit 127
         fi
 
-        exec /app/moonfin/moonfin "\$@"
+        exec /app/davefin/davefin "\$@"
         EOFRUN
-      - chmod +x /app/bin/moonfin
+      - chmod +x /app/bin/davefin
       - '[ -f ${APP_ID}.png ] && cp ${APP_ID}.png /app/share/icons/hicolor/512x512/apps/ || true'
       - cp ${APP_ID}.desktop /app/share/applications/
       - cp ${APP_ID}.metainfo.xml /app/share/metainfo/
@@ -1396,7 +1396,7 @@ main() {
   local version="$(get_app_version)"
 
   echo "======================================"
-  echo "Moonfin Linux Package Builder"
+  echo "Davefin Linux Package Builder"
   echo "Version: ${version}"
   echo "======================================"
   echo ""
@@ -1465,7 +1465,7 @@ USAGE
   echo "======================================"
   echo "Build complete!"
   echo "Artifacts: $REPO_ROOT"
-  ls -lh "$REPO_ROOT"/Moonfin_* 2>/dev/null || echo "(no artifacts built)"
+  ls -lh "$REPO_ROOT"/Davefin_* 2>/dev/null || echo "(no artifacts built)"
   echo "======================================"
 }
 

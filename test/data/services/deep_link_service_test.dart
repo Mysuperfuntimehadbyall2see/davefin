@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moonfin/data/services/deep_link_service.dart';
+import 'package:moonfin/util/app_branding.dart';
 
 void main() {
   group('routeForDeepLink', () {
@@ -31,6 +32,17 @@ void main() {
           Uri.parse('https://example.com/?id=abc'),
         ),
         isNull,
+      );
+    });
+
+    test('routes the app\'s own scheme and moonfin:// alike', () {
+      final own = DeepLinkService.routeForDeepLink(
+        Uri.parse('${AppBranding.deepLinkScheme}://party?code=AB'),
+      );
+      expect(own, '/watch-party?code=AB');
+      expect(
+        DeepLinkService.routeForDeepLink(Uri.parse('moonfin://party?code=AB')),
+        own,
       );
     });
 

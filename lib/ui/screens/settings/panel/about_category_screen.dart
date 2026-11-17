@@ -40,10 +40,10 @@ class _AboutCategoryScreen extends StatelessWidget {
               _TvSettingsListTile(
                 leading: const Icon(Icons.code),
                 title: Text(l10n.sourceCode),
-                subtitle: Text(l10n.sourceCodeUrl),
+                subtitle: const Text(AppBranding.sourceCodeUrl),
                 onTap: () => showQrOrLaunch(
                   context,
-                  url: 'https://github.com/Moonfin-Client/Moonfin-Core',
+                  url: AppBranding.sourceCodeUrl,
                   title: l10n.sourceCode,
                 ),
               ),
@@ -53,7 +53,7 @@ class _AboutCategoryScreen extends StatelessWidget {
                 subtitle: Text(l10n.settingsReportAnIssueSubtitle),
                 onTap: () => showQrOrLaunch(
                   context,
-                  url: 'https://github.com/Moonfin-Client/Moonfin-Core/issues',
+                  url: '${AppBranding.sourceCodeUrl}/issues',
                   title: l10n.settingsReportAnIssue,
                 ),
               ),

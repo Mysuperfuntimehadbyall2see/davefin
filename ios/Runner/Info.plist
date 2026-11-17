@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Moonfin</string>
+	<string>Davefin</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -24,17 +24,17 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<!-- moonfin:// deep links, delivered to Dart by app_links. -->
+	<!-- davefin:// deep links (Davefin's own; Moonfin owns moonfin://), delivered to Dart by app_links. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>CFBundleURLName</key>
-			<string>org.moonfin.app</string>
+			<string>org.davefin.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>moonfin</string>
+				<string>davefin</string>
 			</array>
 		</dict>
 	</array>

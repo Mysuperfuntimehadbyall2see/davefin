@@ -5,7 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:playback_core/playback_core.dart';
 
 import '../../../data/models/aggregated_item.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../util/app_branding.dart';
 import '../../navigation/app_router.dart';
 
 /// Names the browser tab after what's playing, like "Hamilton - Moonfin", and
@@ -61,7 +61,7 @@ class _PlaybackTabTitleState extends State<PlaybackTabTitle> {
 
   @override
   Widget build(BuildContext context) {
-    final appTitle = AppLocalizations.of(context).appTitle;
+    const appTitle = AppBranding.appName;
     final playing = _playingName;
     return Title(
       title: playing == null ? appTitle : '$playing - $appTitle',

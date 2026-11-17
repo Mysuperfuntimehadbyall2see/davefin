@@ -1,0 +1,278 @@
+# Davefin's own CI and releases. Upstream's build.yml, checks.yml and the
+# store/AUR/winget workflows rely on Moonfin's signing and store secrets, so
+# they are disabled in this fork; this one builds with what a fork has.
+#
+# Every push and pull request: analyzer, tests, and the desktop and Android
+# builds. A tag like v3.1.0-davefin.1 also publishes a GitHub Release with
+# the builds attached.
+name: Davefin
+
+on:
+  push:
+    branches: [davefin/main]
+    tags: ['v*-davefin*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: davefin-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  FLUTTER_VERSION: '3.47.2'
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Get packages
+        run: |
+          flutter pub get
+          for pkg in packages/*/; do
+            [ -f "$pkg/pubspec.yaml" ] && (cd "$pkg" && flutter pub get >/dev/null)
+          done
+
+      # Same gate as upstream: no analyzer errors anywhere. Upstream carries
+      # some warnings and infos of its own, so those don't fail the build.
+      - name: Analyze
+        run: dart analyze --no-fatal-warnings .
+
+      # What Davefin adds or changes must be fully clean.
+      - name: Analyze Davefin's changes strictly
+        run: |
+          flutter analyze --no-pub --fatal-infos \
+            lib/util/app_branding.dart lib/util/feature_flags.dart \
+            lib/ui/widgets/pop_out_player lib/ui/widgets/video_mini_player.dart \
+            test/ui/widgets/pop_out_player
+
+      - name: Davefin tests
+        run: |
+          flutter test --no-pub \
+            test/ui/widgets/pop_out_player \
+            test/data/services/deep_link_service_test.dart \
+            test/ui/widgets/playback/playback_tab_title_test.dart \
+            test/data/services/app_update_service_store_test.dart \
+            test/ui/widgets/app_update_banner_test.dart
+
+      # The rest of upstream's suite. A few of its tests fail on a plain
+      # Linux runner on upstream's own 3.1.0 tag too, so this reports
+      # without gating; the step above gates Davefin's code.
+      - name: Full test suite
+        continue-on-error: true
+        run: flutter test --no-pub test/
+
+  android:
+    needs: check
+    name: android (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: mobile
+            files: Davefin_Android_v*.apk
+          - target: tv
+            files: Davefin_AndroidTV_v*.apk
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      # A keystore of Davefin's own keeps one release installing over the
+      # last. Without the secret the build is debug-signed with the runner's
+      # throwaway key, which installs but won't update in place.
+      - name: Set up signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.DAVEFIN_ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.DAVEFIN_ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DAVEFIN_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DAVEFIN_ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "No Davefin keystore secret; the APK will be debug-signed."
+            exit 0
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          cat > android/keystore.properties <<EOF
+          storeFile=../release.keystore
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Limit Gradle memory
+        run: |
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=1G -XX:ReservedCodeCacheSize=256m -XX:+HeapDumpOnOutOfMemoryError
+          kotlin.daemon.jvmargs=-Xmx2G
+          EOF
+
+      - name: Build
+        run: |
+          chmod +x build-android.sh
+          ./build-android.sh ${{ matrix.target }}
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: android-${{ matrix.target }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  linux:
+    needs: check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev libglib2.0-dev libwebkit2gtk-4.1-dev \
+            libmpv-dev libsecret-1-dev libasound2-dev libarchive-dev \
+            rpm libfuse2 zsync
+
+      - name: Install appimagetool
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          sudo chmod +x /usr/local/bin/appimagetool
+
+      # Snap and Flatpak are skipped: they need store tooling and add little
+      # over the AppImage for a personal fork.
+      - name: Build Linux packages
+        run: |
+          chmod +x build-linux.sh
+          ./build-linux.sh all
+          ls -lh Davefin_Linux_v*
+
+      - name: Verify Linux artifacts
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for pattern in 'Davefin_Linux_v*.tar.gz' 'Davefin_Linux_v*.AppImage' 'Davefin_Linux_v*.deb'; do
+            matches=( $pattern )
+            [ ${#matches[@]} -gt 0 ] || { echo "Missing $pattern"; exit 1; }
+          done
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: linux
+          path: |
+            Davefin_Linux_v*.tar.gz
+            Davefin_Linux_v*.AppImage
+            Davefin_Linux_v*.deb
+            Davefin_Linux_v*.rpm
+          if-no-files-found: error
+
+  windows:
+    needs: check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Find the runner's vcpkg and image versions
+        id: vcpkg
+        shell: pwsh
+        run: |
+          $commit = git -C $env:VCPKG_INSTALLATION_ROOT rev-parse HEAD
+          "commit=$commit" >> $env:GITHUB_OUTPUT
+          "image=$env:ImageVersion" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/cache@v5
+        with:
+          path: ~\AppData\Local\vcpkg\archives
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ steps.vcpkg.outputs.commit }}-${{ steps.vcpkg.outputs.image }}
+          restore-keys: vcpkg-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Build installer
+        shell: pwsh
+        run: .\build-windows.ps1
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: windows
+          path: Davefin_Windows_v*.exe
+          if-no-files-found: error
+
+  macos:
+    needs: check
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Select Xcode 26.3
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+
+      # No Developer ID in the fork, so build-macos.sh ad-hoc signs. The DMG
+      # works, but Gatekeeper asks to confirm the first launch.
+      - name: Build DMG
+        env:
+          BUILD_APPSTORE_PKG: '0'
+        run: |
+          chmod +x build-macos.sh
+          ./build-macos.sh
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: macos
+          path: Davefin_macOS_v*.dmg
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [android, linux, windows, macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -lh dist
+          # The newest CHANGELOG section, without its heading.
+          notes=$(awk '/^## /{n++; next} n==1' CHANGELOG.md)
+          gh release create "$TAG" dist/* \
+            --title "Davefin $TAG" \
+            --notes "$notes" \
+            --prerelease=false

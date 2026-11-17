@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:moonfin/data/models/aggregated_item.dart';
 import 'package:moonfin/l10n/app_localizations.dart';
 import 'package:moonfin/ui/widgets/playback/playback_tab_title.dart';
+import 'package:moonfin/util/app_branding.dart';
 import 'package:playback_core/playback_core.dart';
 
 void main() {
@@ -60,7 +61,7 @@ void main() {
   testWidgets('the tab shows the app name while nothing plays', (tester) async {
     await pumpApp(tester);
 
-    expect(tabTitles.last, 'Moonfin');
+    expect(tabTitles.last, AppBranding.appName);
   });
 
   testWidgets('the tab is named after the film that is playing', (
@@ -69,7 +70,7 @@ void main() {
     await pumpApp(tester);
     await play(tester, {'Id': 'film', 'Name': 'Hamilton', 'Type': 'Movie'});
 
-    expect(tabTitles.last, 'Hamilton - Moonfin');
+    expect(tabTitles.last, 'Hamilton - ${AppBranding.appName}');
   });
 
   testWidgets('an episode carries its series name', (tester) async {
@@ -81,7 +82,7 @@ void main() {
       'SeriesName': 'Severance',
     });
 
-    expect(tabTitles.last, 'Severance - Good News About Hell - Moonfin');
+    expect(tabTitles.last, 'Severance - Good News About Hell - ${AppBranding.appName}');
   });
 
   testWidgets('the app name comes back once playback stops', (tester) async {
@@ -91,6 +92,6 @@ void main() {
     manager.state.setPlaying(false);
     await tester.pumpAndSettle();
 
-    expect(tabTitles.last, 'Moonfin');
+    expect(tabTitles.last, AppBranding.appName);
   });
 }

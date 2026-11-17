@@ -1,3 +1,32 @@
+> ## Davefin
+>
+> **This repository is Davefin, a personal fork of [Moonfin](https://github.com/Moonfin-Client/Moonfin-Core).**
+> Everything below this box is Moonfin's own README, kept for attribution. Moonfin is GPL-2.0 and so is Davefin.
+>
+> **What's different**
+>
+> - **Pop-out player** (desktop): the playing video moves into a small, resizable, always-on-top window, like Jellyfin web's pop-out player ([Moonfin #2043](https://github.com/Moonfin-Client/Moonfin-Core/issues/2043)). On web, the same button uses the browser's picture-in-picture.
+> - **Installs next to Moonfin.** It has its own app name, icon, app/bundle ids, URL scheme (`davefin://`), install folder and settings/data folder, so the two never overwrite each other.
+>
+> **Downloads:** [Releases](https://github.com/Mysuperfuntimehadbyall2see/davefin/releases) has Windows (installer), macOS (DMG), Linux (AppImage, .deb, .rpm, tarball), Android and Android TV (APK) builds.
+>
+> **Using the pop-out player**
+>
+> 1. Play a video on Windows, macOS or Linux.
+> 2. Click **Pop out player** (the ↗ icon next to *Minimize* at the top of the player), or the same icon in the mini player bar.
+> 3. The window becomes a small player in the bottom-right corner that stays on top. Drag the video to move it and drag its edges to resize it; it keeps 16:9.
+> 4. Hover for controls: play/pause, seek back/forward, the scrubber, **Dock in app window** (back to the mini bar), **Return to full player**, and stop. Keyboard: Space plays and pauses, ←/→ seek, Esc returns to the full player. Double-clicking the video also returns to the full player.
+>
+> The app window grows back to the size, position, maximized/fullscreen state and pin it had before. To build without the feature, pass `--dart-define=POP_OUT_PLAYER=false`.
+>
+> **Server compatibility.** Davefin talks to servers exactly like Moonfin 3.1.0 does. It uses the same Jellyfin/Emby/Plex/Silo APIs, Moonbase plugin protocol and SyncPlay behaviour, and it identifies itself with Moonfin's client name ("Moonfin for Windows", etc.) so server plugins treat it the same. Nothing changes on the server. Each install gets its own device id, so Moonfin and Davefin show up as two separate devices. `moonfin://` watch-party links still open in Davefin when pasted, while the OS hands clicked `moonfin://` links to Moonfin.
+>
+> **Not shared with Moonfin:** settings, sign-ins and downloads, because each app has its own data folder. Sign in once in Davefin.
+>
+> **Builds and signing.** Android APKs are signed with Davefin's own key when the `DAVEFIN_ANDROID_*` secrets are set, otherwise with a throwaway debug key. Windows and macOS builds are not code-signed, so expect SmartScreen or a Gatekeeper prompt on first launch (macOS: right-click → Open). iOS and tvOS ids are rebranded too, but those builds aren't published.
+>
+> **Keeping up with Moonfin:** `git fetch upstream --tags && git merge <new tag>` on `davefin/main`, then tag `v<version>-davefin.<n>` to publish. The fork-specific values live in `lib/util/app_branding.dart`, plus the platform ids listed in the Davefin entry of [CHANGELOG.md](CHANGELOG.md).
+
 <h1 align="center">Moonfin</h1>
 <h3 align="center">Premium Jellyfin, Emby, Plex & Silo client for mobile, tablet, desktop, TV, and web</h3>
 

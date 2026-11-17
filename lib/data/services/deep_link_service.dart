@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 
+import '../../util/app_branding.dart';
 import '../../ui/navigation/destinations.dart';
 import '../../util/platform_detection.dart';
 
@@ -57,7 +58,9 @@ class DeepLinkService {
   /// link those ask for the PIN or the login rather than staying on the
   /// signed-in user.
   static String? routeForDeepLink(Uri uri) {
-    if (uri.scheme != 'moonfin') return null;
+    if (!AppBranding.acceptedDeepLinkSchemes.contains(uri.scheme)) {
+      return null;
+    }
     if (uri.host == 'party') {
       final code = uri.queryParameters['code'];
       if (code == null || code.isEmpty) return null;

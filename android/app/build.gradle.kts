@@ -34,8 +34,12 @@ plugins {
     // it there is safe because push messaging bails immediately on TV anyway -
     // push_messaging_service.dart:38 returns unless PlatformDetection.isMobile,
     // and the initializeApp call is try/caught regardless.
+    //
+    // Davefin: never applied. google-services.json is Moonfin's Firebase
+    // project and lists only Moonfin's ids, so it would fail the build with
+    // "No matching client found"; push messaging is Moonfin's own service.
     id("com.google.gms.google-services")
-        .apply(System.getenv("MOONFIN_TEST_ID_SUFFIX").isNullOrEmpty())
+        .apply(false && System.getenv("MOONFIN_TEST_ID_SUFFIX").isNullOrEmpty())
     // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -79,8 +83,11 @@ android {
 
     flavorDimensions += "device"
     productFlavors {
-        val baseAppId = "org.moonfin.androidtv"
-        val baseAppName = "Moonfin"
+        // Davefin installs next to Moonfin, so it has ids of its own. The
+        // Kotlin namespace stays org.moonfin.androidtv; only what Android
+        // installs under changes.
+        val baseAppId = "org.davefin.androidtv"
+        val baseAppName = "Davefin"
         // Optional application-id suffix for on-device testing, set through the
         // environment so an unset build is byte-identical to before:
         //   MOONFIN_TEST_ID_SUFFIX=.hwtest flutter build apk --flavor androidTv --debug

@@ -27,6 +27,7 @@ import '../../../data/repositories/seerr_repository.dart';
 import '../../../data/repositories/user_views_repository.dart';
 import '../../../data/services/seerr/seerr_discover_sliders.dart';
 import '../../../di/providers.dart';
+import '../../../util/app_branding.dart';
 import '../../../util/idiom/app_ui_idiom.dart';
 import '../../../platform/web_runtime_config.dart';
 import '../../../playback/apple_player_ui.dart';

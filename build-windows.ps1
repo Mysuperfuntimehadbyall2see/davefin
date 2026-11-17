@@ -301,17 +301,17 @@ function New-InnoScript {
   }
 
   $iss = @"
-#define MyAppName "Moonfin"
+#define MyAppName "Davefin"
 #define MyAppVersion "$AppVersion"
-#define MyAppPublisher "Moonfin"
-#define MyAppExeName "moonfin.exe"
+#define MyAppPublisher "Davefin"
+#define MyAppExeName "davefin.exe"
 
 [Setup]
-AppId={{2B684544-2B56-47BE-B52F-6F7A94BCA4E1}
+AppId={{8C1E5D2A-6F3B-4E7A-9D41-2B7C0F5A9E63}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\Moonfin
+DefaultDirName={autopf}\Davefin
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=$OutputDir
@@ -340,7 +340,7 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
-Root: HKCU; Subkey: "Software\Classes\moonfin"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\davefin"; Flags: dontcreatekey uninsdeletekey
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
@@ -359,18 +359,18 @@ $appVersion = Get-AppVersion
 # x64 keeps the original "Moonfin_Windows_v<version>" name; arm64 follows the same
 # scheme with a "WindowsARM64" platform token.
 if ($Architecture -eq 'arm64') {
-  $installerBaseName = "Moonfin_WindowsARM64_v$appVersion"
+  $installerBaseName = "Davefin_WindowsARM64_v$appVersion"
 } else {
-  $installerBaseName = "Moonfin_Windows_v$appVersion"
+  $installerBaseName = "Davefin_Windows_v$appVersion"
 }
 # Named outside Moonfin_* so the release job doesn't attach it, since an
 # unsigned MSIX only installs through the Store.
-$storePackageBaseName = $installerBaseName -replace '^Moonfin_', 'MoonfinStore_'
+$storePackageBaseName = $installerBaseName -replace '^Davefin_', 'DavefinStore_'
 $distributionChannel = if ($Store) { 'msstore' } else { 'windows' }
 
 Push-Location $repoRoot
 try {
-  Write-Host "Moonfin version: $appVersion (target: $Architecture)"
+  Write-Host "Davefin version: $appVersion (target: $Architecture)"
 
   Assert-ToolchainVersions -FlutterExe $flutterExe
 
@@ -386,7 +386,7 @@ try {
   Invoke-CheckedCommand -Name "flutter build windows" -FilePath $flutterExe -Arguments @("build", "windows", "--release", "--dart-define=DISTRIBUTION_CHANNEL=$distributionChannel")
 
   $releaseDir = Join-Path $repoRoot "build\windows\$Architecture\runner\Release"
-  $releaseExe = Join-Path $releaseDir "moonfin.exe"
+  $releaseExe = Join-Path $releaseDir "davefin.exe"
   if (-not (Test-Path $releaseExe)) {
     throw "Missing release binary: $releaseExe"
   }
@@ -419,7 +419,7 @@ try {
 
   $outputDir = Join-Path $repoRoot "build\windows\installer"
   $iconPath = Join-Path $repoRoot "windows\runner\resources\app_icon.ico"
-  $issPath = Join-Path $outputDir "moonfin.generated.iss"
+  $issPath = Join-Path $outputDir "davefin.generated.iss"
   $outputExe = Join-Path $outputDir "$installerBaseName.exe"
   $rootExe = Join-Path $repoRoot "$installerBaseName.exe"
 

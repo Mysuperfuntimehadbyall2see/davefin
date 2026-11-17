@@ -51,7 +51,7 @@ static void my_application_set_window_icon(GtkWindow* window) {
 #define MOONFIN_ENTRY_SIGNATURE            \
   "[Desktop Entry]\n"                      \
   "Type=Application\n"                     \
-  "Name=Moonfin\n"                         \
+  "Name=Davefin\n"                         \
   "Comment=Jellyfin & Emby media client\n" \
   "Exec=\""
 
@@ -261,7 +261,7 @@ static void my_application_install_desktop_entry() {
       "Categories=AudioVideo;Video;\n"
       "Terminal=false\n"
       "StartupWMClass=%s\n"
-      "MimeType=x-scheme-handler/moonfin;\n",
+      "MimeType=x-scheme-handler/davefin;\n",
       appimage, APPLICATION_ID, APPLICATION_ID);
 
   // Rewrite only when something changed, so moving the image updates the entry
@@ -285,7 +285,7 @@ static void my_application_install_desktop_entry() {
     return;
   }
 
-  // Index the scheme handler so moonfin:// links resolve right away.
+  // Index the scheme handler so davefin:// links resolve right away.
   my_application_refresh_desktop_database(applications_dir);
 }
 
@@ -305,7 +305,7 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  gtk_window_set_title(window, "Moonfin");
+  gtk_window_set_title(window, "Davefin");
   my_application_install_desktop_entry();
   my_application_set_window_icon(window);
 

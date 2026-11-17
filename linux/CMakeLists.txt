@@ -2,8 +2,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(runner LANGUAGES CXX)
 
-set(BINARY_NAME "moonfin")
-set(APPLICATION_ID "org.moonfin.linux")
+set(BINARY_NAME "davefin")
+set(APPLICATION_ID "org.davefin.linux")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

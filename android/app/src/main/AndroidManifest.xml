@@ -53,7 +53,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="moonfin"/>
+                <data android:scheme="davefin"/>
             </intent-filter>
             <!-- Keep the engine's built-in deep linking off so raw moonfin://
                  URIs only reach DeepLinkService. -->

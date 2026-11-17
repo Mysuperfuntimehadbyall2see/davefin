@@ -7,6 +7,7 @@ import 'package:server_core/server_core.dart';
 
 import '../../preference/preference_constants.dart';
 import '../../preference/user_preferences.dart';
+import '../../util/app_branding.dart';
 import '../../util/platform_detection.dart';
 import '../models/aggregated_item.dart';
 import '../models/home_row.dart';
@@ -201,8 +202,8 @@ class TopShelfService {
       'imageURL': ?image1x,
       'contentImageURL': ?image1x,
       'imageURL2x': ?image2x,
-      'displayURL': 'moonfin://item?$query',
-      'playURL': 'moonfin://play?$query',
+      'displayURL': '${AppBranding.deepLinkScheme}://item?$query',
+      'playURL': '${AppBranding.deepLinkScheme}://play?$query',
     };
   }
 
